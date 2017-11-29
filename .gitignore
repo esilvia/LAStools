@@ -4,5 +4,24 @@ Debug
 lastools.ncb
 lastools.opt
 *~
+
+# 64bit Compilation Binaries #
+##############################
 Debug64
 Release64
+
+# User-Specific Solution Files #
+################################
+*.v12.suo
+*.vcxproj.user
+
+# Visual Studio Cache Files #
+#############################
+*.aps 
+*.ncb 
+*.opendb 
+*.opensdf 
+*.sdf 
+*.cachefile 
+*.VC.db 
+*.VC.VC.opendb 
