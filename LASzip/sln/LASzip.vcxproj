@@ -264,6 +264,7 @@ copy Debug64\LASzip.dll ..\example\Debug64\LASzip.dll</Command>
       <PrecompiledHeaderOutputFile>.\Release\LASzip.pch</PrecompiledHeaderOutputFile>
       <ObjectFileName>.\Release\</ObjectFileName>
       <ProgramDataBaseFileName>.\Release\</ProgramDataBaseFileName>
+      <DisableSpecificWarnings>4800;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PostBuildEvent>
       <Command>copy Release\LASzip.dll ..\dll\LASzip.dll
