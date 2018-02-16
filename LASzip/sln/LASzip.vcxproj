@@ -44,6 +44,7 @@
     <ClInclude Include="..\src\lasreaditemcompressed_v1.hpp" />
     <ClInclude Include="..\src\lasreaditemcompressed_v2.hpp" />
     <ClInclude Include="..\src\lasreaditemcompressed_v3.hpp" />
+    <ClInclude Include="..\src\lasreaditemcompressed_v4.hpp" />
     <ClInclude Include="..\src\lasreaditemraw.hpp" />
     <ClInclude Include="..\src\lasreadpoint.hpp" />
     <ClInclude Include="..\src\lasunzipper.hpp" />
@@ -51,6 +52,7 @@
     <ClInclude Include="..\src\laswriteitemcompressed_v1.hpp" />
     <ClInclude Include="..\src\laswriteitemcompressed_v2.hpp" />
     <ClInclude Include="..\src\laswriteitemcompressed_v3.hpp" />
+    <ClInclude Include="..\src\laswriteitemcompressed_v4.hpp" />
     <ClInclude Include="..\src\laswriteitemraw.hpp" />
     <ClInclude Include="..\src\laswritepoint.hpp" />
     <ClInclude Include="..\src\laszip.hpp" />
@@ -72,11 +74,13 @@
     <ClCompile Include="..\src\lasreaditemcompressed_v1.cpp" />
     <ClCompile Include="..\src\lasreaditemcompressed_v2.cpp" />
     <ClCompile Include="..\src\lasreaditemcompressed_v3.cpp" />
+    <ClCompile Include="..\src\lasreaditemcompressed_v4.cpp" />
     <ClCompile Include="..\src\lasreadpoint.cpp" />
     <ClCompile Include="..\src\lasunzipper.cpp" />
     <ClCompile Include="..\src\laswriteitemcompressed_v1.cpp" />
     <ClCompile Include="..\src\laswriteitemcompressed_v2.cpp" />
     <ClCompile Include="..\src\laswriteitemcompressed_v3.cpp" />
+    <ClCompile Include="..\src\laswriteitemcompressed_v4.cpp" />
     <ClCompile Include="..\src\laswritepoint.cpp" />
     <ClCompile Include="..\src\laszip.cpp" />
     <ClCompile Include="..\src\laszipper.cpp" />
