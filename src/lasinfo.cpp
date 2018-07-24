@@ -184,7 +184,7 @@ static bool valid_resolution(F64 coordinate, F64 offset, F64 scale_factor)
   F64 coordinate_without_offset = coordinate - offset;
   F64 fixed_precision_multiplier = coordinate_without_offset / scale_factor;
   I64 quantized_fixed_precision_multiplier = I64_QUANTIZE(fixed_precision_multiplier);
-  if ((fabs(fixed_precision_multiplier - quantized_fixed_precision_multiplier)) < (scale_factor/100))
+  if ((fabs(fixed_precision_multiplier - quantized_fixed_precision_multiplier)) < 0.001)
   {
     return true;
   }
@@ -747,24 +747,6 @@ int main(int argc, char *argv[])
 
   while (lasreadopener.active())
   {
-    // print name of input
-
-    if (file_out)
-    {
-      if (lasreadopener.is_merged())
-      {
-        fprintf(file_out, "lasinfo (%u) report for %u merged files\012", LAS_TOOLS_VERSION, lasreadopener.get_file_name_number());
-      }
-      else if (lasreadopener.is_piped())
-      {
-        fprintf(file_out, "lasinfo (%u) report for piped input\012", LAS_TOOLS_VERSION);
-      }
-      else if (lasreadopener.get_file_name())
-      {
-        fprintf(file_out, "lasinfo (%u) report for %s\012", LAS_TOOLS_VERSION, lasreadopener.get_file_name(lasreadopener.get_file_name_current()));
-      }
-    }
-
     if (edit_header)
     {
       if (lasreadopener.is_piped())
@@ -1015,6 +997,24 @@ int main(int argc, char *argv[])
       }
     }
 
+    // print name of input
+
+    if (file_out)
+    {
+      if (lasreadopener.is_merged())
+      {
+        fprintf(file_out, "lasinfo (%u) report for %u merged files\012", LAS_TOOLS_VERSION, lasreadopener.get_file_name_number());
+      }
+      else if (lasreadopener.is_piped())
+      {
+        fprintf(file_out, "lasinfo (%u) report for piped input\012", LAS_TOOLS_VERSION);
+      }
+      else if (lasreadopener.get_file_name())
+      {
+        fprintf(file_out, "lasinfo (%u) report for '%s'\012", LAS_TOOLS_VERSION, lasreadopener.get_file_name());
+      }
+    }
+
     U32 number_of_point_records = lasheader->number_of_point_records;
     U32 number_of_points_by_return0 = lasheader->number_of_points_by_return[0];
 
@@ -1054,27 +1054,27 @@ int main(int argc, char *argv[])
       fprintf(file_out, "  max x y z:                  "); lidardouble2string(printstring, lasheader->max_x, lasheader->x_scale_factor); fprintf(file_out, "%s ", printstring); lidardouble2string(printstring, lasheader->max_y, lasheader->y_scale_factor); fprintf(file_out, "%s ", printstring); lidardouble2string(printstring, lasheader->max_z, lasheader->z_scale_factor); fprintf(file_out, "%s\012", printstring);
       if (!valid_resolution(lasheader->min_x, lasheader->x_offset, lasheader->x_scale_factor))
       {
-        fprintf(file_out, "WARNING: full resolution of min_x not compatible with x_offset and x_scale_factor: "); lidardouble2string(printstring, lasheader->min_x); fprintf(file_out, "%s\n", printstring);
+        fprintf(file_out, "WARNING: stored resolution of min_x not compatible with x_offset and x_scale_factor: "); lidardouble2string(printstring, lasheader->min_x); fprintf(file_out, "%s\n", printstring);
       }
       if (!valid_resolution(lasheader->min_y, lasheader->y_offset, lasheader->y_scale_factor))
       {
-        fprintf(file_out, "WARNING: full resolution of min_y not compatible with y_offset and y_scale_factor: "); lidardouble2string(printstring, lasheader->min_y); fprintf(file_out, "%s\n", printstring);
+        fprintf(file_out, "WARNING: stored resolution of min_y not compatible with y_offset and y_scale_factor: "); lidardouble2string(printstring, lasheader->min_y); fprintf(file_out, "%s\n", printstring);
       }
       if (!valid_resolution(lasheader->min_z, lasheader->z_offset, lasheader->z_scale_factor))
       {
-        fprintf(file_out, "WARNING: full resolution of min_z not compatible with z_offset and z_scale_factor: "); lidardouble2string(printstring, lasheader->min_z); fprintf(file_out, "%s\n", printstring);
+        fprintf(file_out, "WARNING: stored resolution of min_z not compatible with z_offset and z_scale_factor: "); lidardouble2string(printstring, lasheader->min_z); fprintf(file_out, "%s\n", printstring);
       }
       if (!valid_resolution(lasheader->max_x, lasheader->x_offset, lasheader->x_scale_factor))
       {
-        fprintf(file_out, "WARNING: full resolution of max_x not compatible with x_offset and x_scale_factor: "); lidardouble2string(printstring, lasheader->max_x); fprintf(file_out, "%s\n", printstring);
+        fprintf(file_out, "WARNING: stored resolution of max_x not compatible with x_offset and x_scale_factor: "); lidardouble2string(printstring, lasheader->max_x); fprintf(file_out, "%s\n", printstring);
       }
       if (!valid_resolution(lasheader->max_y, lasheader->y_offset, lasheader->y_scale_factor))
       {
-        fprintf(file_out, "WARNING: full resolution of max_y not compatible with y_offset and y_scale_factor: "); lidardouble2string(printstring, lasheader->max_y); fprintf(file_out, "%s\n", printstring);
+        fprintf(file_out, "WARNING: stored resolution of max_y not compatible with y_offset and y_scale_factor: "); lidardouble2string(printstring, lasheader->max_y); fprintf(file_out, "%s\n", printstring);
       }
       if (!valid_resolution(lasheader->max_z, lasheader->z_offset, lasheader->z_scale_factor))
       {
-        fprintf(file_out, "WARNING: full resolution of max_z not compatible with z_offset and z_scale_factor: "); lidardouble2string(printstring, lasheader->min_z); fprintf(file_out, "%s\n", printstring);
+        fprintf(file_out, "WARNING: stored resolution of max_z not compatible with z_offset and z_scale_factor: "); lidardouble2string(printstring, lasheader->max_z); fprintf(file_out, "%s\n", printstring);
       }
       if ((lasheader->version_major == 1) && (lasheader->version_minor >= 3))
       {
@@ -1651,6 +1651,33 @@ int main(int argc, char *argv[])
                   if (lasreader->header.vlr_geo_double_params)
                   {
                     fprintf(file_out, "GeogPrimeMeridianLongGeoKey: %.10g\012",lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset]);
+                  }
+                  break;
+                case 2062: // GeogTOWGS84GeoKey
+                  switch (lasreader->header.vlr_geo_key_entries[j].count)
+                  {
+                  case 3:
+                    if (lasreader->header.vlr_geo_double_params)
+                    {
+                      fprintf(file_out, "GeogTOWGS84GeoKey: TOWGS84[%.10g,%.10g,%.10g]\012",lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+1], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+2]);
+                    }
+                    else
+                    {
+                      fprintf(file_out, "GeogTOWGS84GeoKey: no vlr_geo_double_params. cannot look up the three parameters.\012");
+                    }
+                    break;
+                  case 7:
+                    if (lasreader->header.vlr_geo_double_params)
+                    {
+                      fprintf(file_out, "GeogTOWGS84GeoKey: TOWGS84[%.10g,%.10g,%.10g,%.10g,%.10g,%.10g,%.10g]\012",lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+1], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+2], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+3], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+4], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+5], lasreader->header.vlr_geo_double_params[lasreader->header.vlr_geo_key_entries[j].value_offset+6]);
+                    }
+                    else
+                    {
+                      fprintf(file_out, "GeogTOWGS84GeoKey: no vlr_geo_double_params. cannot look up the seven parameters.\012");
+                    }
+                    break;
+                  default:
+                    fprintf(file_out, "GeogTOWGS84GeoKey: look-up for type %d not implemented\012", lasreader->header.vlr_geo_key_entries[j].count);
                   }
                   break;
                 case 3072: // ProjectedCSTypeGeoKey
@@ -3015,6 +3042,9 @@ int main(int argc, char *argv[])
                   case 5941: // Norway Normal Null 2000
                     fprintf(file_out, "VerticalCSTypeGeoKey: Norway Normal Null 2000\012");
                     break;
+                  case 6647: // Norway Normal Null 2000
+                    fprintf(file_out, "VerticalCSTypeGeoKey: Canadian Geodetic Vertical Datum of 2013\012");
+                    break;
                   default:
                     fprintf(file_out, "VerticalCSTypeGeoKey: look-up for %d not implemented\012", lasreader->header.vlr_geo_key_entries[j].value_offset);
                   }
@@ -3995,32 +4025,32 @@ int main(int argc, char *argv[])
         value = lasheader->get_x(lassummary.max.get_X());
         if (value > enlarged_max_x)
         {
-          if (file_out) fprintf(file_out, "real max x larger than header max x by %lf\n", value - lasheader->max_x);
+          if (file_out) fprintf(file_out, "WARNING: real max x larger than header max x by %lf\n", value - lasheader->max_x);
         }
         value = lasheader->get_x(lassummary.min.get_X());
         if (value < enlarged_min_x)
         {
-          if (file_out) fprintf(file_out, "real min x smaller than header min x by %lf\n", lasheader->min_x - value);
+          if (file_out) fprintf(file_out, "WARNING: real min x smaller than header min x by %lf\n", lasheader->min_x - value);
         }
         value = lasheader->get_y(lassummary.max.get_Y());
         if (value > enlarged_max_y)
         {
-          if (file_out) fprintf(file_out, "real max y larger than header max y by %lf\n", value - lasheader->max_y);
+          if (file_out) fprintf(file_out, "WARNING: real max y larger than header max y by %lf\n", value - lasheader->max_y);
         }
         value = lasheader->get_y(lassummary.min.get_Y());
         if (value < enlarged_min_y)
         {
-          if (file_out) fprintf(file_out, "real min y smaller than header min y by %lf\n", lasheader->min_y - value);
+          if (file_out) fprintf(file_out, "WARNING: real min y smaller than header min y by %lf\n", lasheader->min_y - value);
         }
         value = lasheader->get_z(lassummary.max.get_Z());
         if (value > enlarged_max_z)
         {
-          if (file_out) fprintf(file_out, "real max z larger than header max z by %lf\n", value - lasheader->max_z);
+          if (file_out) fprintf(file_out, "WARNING: real max z larger than header max z by %lf\n", value - lasheader->max_z);
         }
         value = lasheader->get_z(lassummary.min.get_Z());
         if (value < enlarged_min_z)
         {
-          if (file_out) fprintf(file_out, "real min z smaller than header min z by %lf\n", lasheader->min_z - value);
+          if (file_out) fprintf(file_out, "WARNING: real min z smaller than header min z by %lf\n", lasheader->min_z - value);
         }
       }
     }

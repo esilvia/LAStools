@@ -1341,7 +1341,7 @@ BOOL LASreaderTXT::parse(const char* parse_string)
       if (translate_intensity != 0.0f) temp_f = temp_f+translate_intensity;
       if (scale_intensity != 1.0f) temp_f = temp_f*scale_intensity;
       if (temp_f < 0.0f || temp_f >= 65535.5f) fprintf(stderr, "WARNING: intensity %g is out of range of unsigned short\n", temp_f);
-      point.intensity = (unsigned short)(temp_f+0.5f);
+      point.set_intensity(U16_QUANTIZE(temp_f));
       while (l[0] && l[0] != ' ' && l[0] != ',' && l[0] != '\t' && l[0] != ';') l++; // then advance to next white space
     }
     else if (p[0] == 'a') // we expect the scan angle
@@ -1352,7 +1352,7 @@ BOOL LASreaderTXT::parse(const char* parse_string)
       if (translate_scan_angle != 0.0f) temp_f = temp_f+translate_scan_angle;
       if (scale_scan_angle != 1.0f) temp_f = temp_f*scale_scan_angle;
       if (temp_f < -128.0f || temp_f > 127.0f) fprintf(stderr, "WARNING: scan angle %g is out of range of char\n", temp_f);
-      point.scan_angle_rank = (char)temp_f;
+      point.set_scan_angle(temp_f);
       while (l[0] && l[0] != ' ' && l[0] != ',' && l[0] != '\t' && l[0] != ';') l++; // then advance to next white space
     }
     else if (p[0] == 'n') // we expect the number of returns of given pulse
@@ -1467,8 +1467,15 @@ BOOL LASreaderTXT::parse(const char* parse_string)
       while (l[0] && (l[0] == ' ' || l[0] == ',' || l[0] == '\t' || l[0] == ';')) l++; // first skip white spaces
       if (l[0] == 0) return FALSE;
       if (sscanf(l, "%d", &temp_i) != 1) return FALSE;
-      if (temp_i < 0 || temp_i > 255) fprintf(stderr, "WARNING: classification %d is out of range of unsigned char\n", temp_i);
-      point.classification = (unsigned char)temp_i;
+      if (temp_i < 0 || temp_i > 255)
+      {
+        fprintf(stderr, "WARNING: classification %d is out of range of unsigned char\n", temp_i);
+        point.set_classification(U8_CLAMP(temp_i));
+      }
+      else
+      {
+        point.set_classification((U8)temp_i);
+      }
       while (l[0] && l[0] != ' ' && l[0] != ',' && l[0] != '\t' && l[0] != ';') l++; // then advance to next white space
     }
     else if (p[0] == 'u') // we expect the user data
@@ -1476,8 +1483,15 @@ BOOL LASreaderTXT::parse(const char* parse_string)
       while (l[0] && (l[0] == ' ' || l[0] == ',' || l[0] == '\t' || l[0] == ';')) l++; // first skip white spaces
       if (l[0] == 0) return FALSE;
       if (sscanf(l, "%d", &temp_i) != 1) return FALSE;
-      if (temp_i < 0 || temp_i > 255) fprintf(stderr, "WARNING: user data %d is out of range of unsigned char\n", temp_i);
-      point.user_data = temp_i & 255;
+      if (temp_i < 0 || temp_i > 255)
+      {
+        fprintf(stderr, "WARNING: user data %d is out of range of unsigned char\n", temp_i);
+        point.set_user_data(U8_CLAMP(temp_i));
+      }
+      else
+      {
+        point.set_user_data((U8)temp_i);
+      }
       while (l[0] && l[0] != ' ' && l[0] != ',' && l[0] != '\t' && l[0] != ';') l++; // then advance to next white space
     }
     else if (p[0] == 'p') // we expect the point source ID
@@ -1485,8 +1499,15 @@ BOOL LASreaderTXT::parse(const char* parse_string)
       while (l[0] && (l[0] == ' ' || l[0] == ',' || l[0] == '\t' || l[0] == ';')) l++; // first skip white spaces
       if (l[0] == 0) return FALSE;
       if (sscanf(l, "%d", &temp_i) != 1) return FALSE;
-      if (temp_i < 0 || temp_i > 65535) fprintf(stderr, "WARNING: point source ID %d is out of range of unsigned short\n", temp_i);
-      point.point_source_ID = temp_i & 65535;
+      if (temp_i < 0 || temp_i > 65535)
+      {
+        fprintf(stderr, "WARNING: point source ID %d is out of range of unsigned short\n", temp_i);
+        point.set_point_source_ID(U16_CLAMP(temp_i));
+      }
+      else
+      {
+        point.set_point_source_ID((U16)temp_i);
+      }
       while (l[0] && l[0] != ' ' && l[0] != ',' && l[0] != '\t' && l[0] != ';') l++; // then advance to next white space
     }
     else if (p[0] == 'e') // we expect the edge of flight line flag

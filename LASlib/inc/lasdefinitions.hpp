@@ -49,7 +49,7 @@
 #ifndef LAS_DEFINITIONS_HPP
 #define LAS_DEFINITIONS_HPP
 
-#define LAS_TOOLS_VERSION 180209
+#define LAS_TOOLS_VERSION 180722
 
 #include <stdio.h>
 #include <string.h>
@@ -290,6 +290,11 @@ public:
     global_encoding |= (1 << bit);
   }
 
+  void unset_global_encoding_bit(I32 bit)
+  {
+    global_encoding &= ~(1 << bit);
+  }
+
   BOOL get_global_encoding_bit(I32 bit) const
   {
     return (BOOL)(global_encoding & (1 << bit));
@@ -365,9 +370,9 @@ public:
       }
       free(evlrs);
       evlrs = 0;
-      start_of_first_extended_variable_length_record = 0;
-      number_of_extended_variable_length_records = 0;
     }
+    start_of_first_extended_variable_length_record = 0;
+    number_of_extended_variable_length_records = 0;
   };
 
   void clean_laszip()
@@ -435,7 +440,7 @@ public:
     vlr_lasoriginal = 0;
     user_data_after_header_size = 0;
     user_data_after_header = 0;
-    number_attributes = 0;
+    attributes_linked = FALSE;
     offset_to_point_data = header_size;
   }
 
@@ -551,8 +556,9 @@ public:
     {
       number_of_variable_length_records = 1;
       offset_to_point_data += 54;
-      vlrs = (LASvlr*)malloc(sizeof(LASvlr)*number_of_variable_length_records);
+      vlrs = (LASvlr*)malloc(sizeof(LASvlr));
     }
+    memset(&(vlrs[i]), 0, sizeof(LASvlr));
     vlrs[i].reserved = 0; // used to be 0xAABB
     strncpy(vlrs[i].user_id, user_id, 16);
     vlrs[i].record_id = record_id;
@@ -726,6 +732,7 @@ public:
         {
           free(evlrs);
           evlrs = 0;
+          start_of_first_extended_variable_length_record = 0;
         }
         return TRUE;
       }
@@ -946,6 +953,7 @@ public:
     if (vlr_geo_ogc_wkt)
     {
       remove_vlr("LASF_Projection", 2112);
+      remove_evlr("LASF_Projection", 2112);
       vlr_geo_ogc_wkt = 0;
     }
   }

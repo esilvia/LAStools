@@ -151,7 +151,8 @@ int main(int argc, char *argv[])
   int set_version_minor = -1;
   int set_point_data_format = -1;
   int set_point_data_record_length = -1;
-  int set_gps_time_endcoding = -1;
+  int set_global_encoding_gps_bit = -1;
+  int set_lastiling_buffer_flag = -1;
   // variable header changes
   bool set_ogc_wkt = false;
   bool set_ogc_wkt_in_evlr = false;
@@ -161,8 +162,13 @@ int main(int argc, char *argv[])
   int remove_variable_length_record = -1;
   int remove_variable_length_record_from = -1;
   int remove_variable_length_record_to = -1;
+  bool remove_all_extended_variable_length_records = false;
+  int remove_extended_variable_length_record = -1;
+  int remove_extended_variable_length_record_from = -1;
+  int remove_extended_variable_length_record_to = -1;
   bool remove_tiling_vlr = false;
   bool remove_original_vlr = false;
+  bool remove_empty_files = true;
   // extract a subsequence
   I64 subsequence_start = 0;
   I64 subsequence_stop = I64_MAX;
@@ -196,11 +202,11 @@ int main(int argc, char *argv[])
       if (argv[i][0] == '–') argv[i][0] = '-';
       if (strcmp(argv[i],"-week_to_adjusted") == 0)
       {
-        set_gps_time_endcoding = 1;
+        set_global_encoding_gps_bit = 1;
       }
       else if (strcmp(argv[i],"-adjusted_to_week") == 0)
       {
-        set_gps_time_endcoding = 0;
+        set_global_encoding_gps_bit = 0;
       }
     }
     if (!geoprojectionconverter.parse(argc, argv)) byebye(true);
@@ -287,6 +293,16 @@ int main(int argc, char *argv[])
       subsequence_stop = (I64)atoi(argv[i+1]);
       i+=1;
     }
+    else if (strcmp(argv[i],"-set_global_encoding_gps_bit") == 0)
+    {
+      if ((i+1) >= argc)
+      {
+        fprintf(stderr,"ERROR: '%s' needs 1 argument: 0 or 1\n", argv[i]);
+        byebye(true);
+      }
+      set_global_encoding_gps_bit = atoi(argv[i+1]);
+      i+=1;
+    }
     else if (strcmp(argv[i],"-set_version") == 0)
     {
       if ((i+1) >= argc)
@@ -320,6 +336,25 @@ int main(int argc, char *argv[])
       }
       set_version_minor = atoi(argv[i+1]);
       i+=1;
+    }
+    else if (strcmp(argv[i],"-set_lastiling_buffer_flag") == 0)
+    {
+      if ((i+1) >= argc)
+      {
+        fprintf(stderr,"ERROR: '%s' needs 1 argument: 0 or 1\n", argv[i]);
+        byebye(true);
+      }
+      set_lastiling_buffer_flag = atoi(argv[i+1]);
+      if ((set_lastiling_buffer_flag < 0) || (set_lastiling_buffer_flag > 1))
+      {
+        fprintf(stderr,"ERROR: '%s' needs 1 argument: 0 or 1\n", argv[i]);
+        byebye(true);
+      }
+      i+=1;
+    }
+    else if (strcmp(argv[i],"-dont_remove_empty_files") == 0)
+    {
+      remove_empty_files = false;
     }
     else if (strcmp(argv[i],"-remove_padding") == 0)
     {
@@ -377,6 +412,34 @@ int main(int argc, char *argv[])
       remove_variable_length_record = -1;
       remove_variable_length_record_from = atoi(argv[i+1]);
       remove_variable_length_record_to = atoi(argv[i+2]);
+      i+=2;
+    }
+    else if (strcmp(argv[i],"-remove_all_evlrs") == 0)
+    {
+      remove_all_extended_variable_length_records = true;
+    }
+    else if (strcmp(argv[i],"-remove_evlr") == 0)
+    {
+      if ((i+1) >= argc)
+      {
+        fprintf(stderr,"ERROR: '%s' needs 1 argument: number\n", argv[i]);
+        byebye(true);
+      }
+      remove_extended_variable_length_record = atoi(argv[i+1]);
+      remove_extended_variable_length_record_from = -1;
+      remove_extended_variable_length_record_to = -1;
+      i++;
+    }
+    else if (strcmp(argv[i],"-remove_evlrs_from_to") == 0)
+    {
+      if ((i+2) >= argc)
+      {
+        fprintf(stderr,"ERROR: '%s' needs 2 arguments: start end\n", argv[i]);
+        byebye(true);
+      }
+      remove_extended_variable_length_record = -1;
+      remove_extended_variable_length_record_from = atoi(argv[i+1]);
+      remove_extended_variable_length_record_to = atoi(argv[i+2]);
       i+=2;
     }
     else if (strcmp(argv[i],"-remove_tiling_vlr") == 0)
@@ -507,9 +570,9 @@ int main(int argc, char *argv[])
 
     // prepare the header for output
 
-    if (set_gps_time_endcoding != -1)
+    if (set_global_encoding_gps_bit != -1)
     {
-      if (set_gps_time_endcoding == 0)
+      if (set_global_encoding_gps_bit == 0)
       {
         if ((lasreader->header.global_encoding & 1) == 0)
         {
@@ -529,7 +592,7 @@ int main(int argc, char *argv[])
           lasreader->header.global_encoding &= ~1;
         }
       }
-      else if (set_gps_time_endcoding == 1)
+      else if (set_global_encoding_gps_bit == 1)
       {
         if ((lasreader->header.global_encoding & 1) == 1)
         {
@@ -548,6 +611,10 @@ int main(int argc, char *argv[])
         {
           lasreader->header.global_encoding |= 1;
         }
+      }
+      else
+      {
+        fprintf(stderr, "WARNING: ignoring invalid option '-set_global_encoding_gps_bit %d'\n", set_global_encoding_gps_bit);
       }
     }
 
@@ -672,9 +739,41 @@ int main(int argc, char *argv[])
             fprintf(stderr, "ERROR: unknown point_data_format %d\n", lasreader->header.point_data_format);
             byebye(true);
           }
+          point = new LASpoint;
+          lasreader->header.clean_laszip();
         }
-        point = new LASpoint;
-        point->init(&lasreader->header, lasreader->header.point_data_format, lasreader->header.point_data_record_length);
+        if (lasreader->header.get_global_encoding_bit(LAS_TOOLS_GLOBAL_ENCODING_BIT_OGC_WKT_CRS))
+        {
+          fprintf(stderr, "WARNING: unsetting global encoding bit %d when downgrading from version 1.%d to version 1.%d\n", LAS_TOOLS_GLOBAL_ENCODING_BIT_OGC_WKT_CRS, lasreader->header.version_minor, set_version_minor);
+          lasreader->header.unset_global_encoding_bit(LAS_TOOLS_GLOBAL_ENCODING_BIT_OGC_WKT_CRS);
+        }
+        if (lasreader->header.number_of_extended_variable_length_records)
+        {
+          fprintf(stderr, "WARNING: loosing %d EVLR%s when downgrading from version 1.%d to version 1.%d\n         attempting to move %s to the VLR section ...\n", lasreader->header.number_of_extended_variable_length_records, (lasreader->header.number_of_extended_variable_length_records > 1 ? "s" : ""), lasreader->header.version_minor, set_version_minor, (lasreader->header.number_of_extended_variable_length_records > 1 ? "them" : "it"));
+
+          U32 u;
+          for (u = 0; u < lasreader->header.number_of_extended_variable_length_records; u++)
+          {
+            if (lasreader->header.evlrs[u].record_length_after_header <= U16_MAX)
+            {
+              lasreader->header.add_vlr(lasreader->header.evlrs[u].user_id, lasreader->header.evlrs[u].record_id, (U16)lasreader->header.evlrs[u].record_length_after_header, lasreader->header.evlrs[u].data);
+              lasreader->header.evlrs[u].data = 0;
+#ifdef _WIN32
+              fprintf(stderr, "         moved EVLR %d with user ID '%s' and %I64d bytes of payload\n", u, lasreader->header.evlrs[u].user_id, lasreader->header.evlrs[u].record_length_after_header);
+#else
+              fprintf(stderr, "         moved EVLR %d with user ID '%s' and %lld bytes of payload\n", u, lasreader->header.evlrs[u].user_id, lasreader->header.evlrs[u].record_length_after_header);
+#endif
+            }
+            else
+            {
+#ifdef _WIN32
+              fprintf(stderr, "         lost EVLR %d with user ID '%s' and %I64d bytes of payload\n", u, lasreader->header.evlrs[u].user_id, lasreader->header.evlrs[u].record_length_after_header);
+#else
+              fprintf(stderr, "         lost EVLR %d with user ID '%s' and %lld bytes of payload\n", u, lasreader->header.evlrs[u].user_id, lasreader->header.evlrs[u].record_length_after_header);
+#endif
+            }
+          }
+        }
       }
 
       lasreader->header.version_minor = (U8)set_version_minor;
@@ -788,6 +887,18 @@ int main(int argc, char *argv[])
       lasreader->header.clean_laszip();
     }
 
+    if (set_lastiling_buffer_flag != -1)
+    {
+      if (lasreader->header.vlr_lastiling)
+      {
+        lasreader->header.vlr_lastiling->buffer = set_lastiling_buffer_flag;
+      }
+      else
+      {
+        fprintf(stderr, "WARNING: file '%s' has no LAStiling VLR. cannot set buffer flag.\n", lasreadopener.get_file_name());
+      }
+    }
+
     // if the point needs to be copied set up the data fields
 
     if (point)
@@ -795,17 +906,35 @@ int main(int argc, char *argv[])
       point->init(&lasreader->header, lasreader->header.point_data_format, lasreader->header.point_data_record_length);
     }
 
-    // maybe we should add / change the projection information
+    // reproject or just set the projection?
+
     LASquantizer* reproject_quantizer = 0;
     LASquantizer* saved_quantizer = 0;
-    if (geoprojectionconverter.has_projection(true) || geoprojectionconverter.has_projection(false))
-    {
-      if (!geoprojectionconverter.has_projection(true) && lasreader->header.vlr_geo_keys)
-      {
-        geoprojectionconverter.set_projection_from_geo_keys(lasreader->header.vlr_geo_keys[0].number_of_keys, (GeoProjectionGeoKeys*)lasreader->header.vlr_geo_key_entries, lasreader->header.vlr_geo_ascii_params, lasreader->header.vlr_geo_double_params);
-      }
+    bool set_projection_in_header = false;
 
-      if (geoprojectionconverter.has_projection(true) && geoprojectionconverter.has_projection(false))
+    if (geoprojectionconverter.has_projection(false)) // reproject because a target projection was provided in the command line
+    {
+      if (!geoprojectionconverter.has_projection(true))      // if no source projection was provided in the command line ...
+      {
+        if (lasreader->header.vlr_geo_ogc_wkt)               // ... try to get it from the OGC WKT string ...
+        {
+          geoprojectionconverter.set_projection_from_ogc_wkt(lasreader->header.vlr_geo_ogc_wkt);
+        }
+        if (!geoprojectionconverter.has_projection(true))    // ... nothing ... ? ...
+        {
+          if (lasreader->header.vlr_geo_keys)                // ... try to get it from the geo keys.
+          {
+            geoprojectionconverter.set_projection_from_geo_keys(lasreader->header.vlr_geo_keys[0].number_of_keys, (GeoProjectionGeoKeys*)lasreader->header.vlr_geo_key_entries, lasreader->header.vlr_geo_ascii_params, lasreader->header.vlr_geo_double_params);
+          }
+        }
+      }
+      if (!geoprojectionconverter.has_projection(true))
+      {
+        fprintf(stderr, "WARNING: cannot determine source projection of '%s'. not reprojecting ... \n", lasreadopener.get_file_name());
+
+        set_projection_in_header = false;
+      }
+      else
       {
         reproject_quantizer = new LASquantizer();
         double point[3];
@@ -819,8 +948,17 @@ int main(int argc, char *argv[])
         reproject_quantizer->x_offset = ((I64)((point[0]/reproject_quantizer->x_scale_factor)/10000000))*10000000*reproject_quantizer->x_scale_factor;
         reproject_quantizer->y_offset = ((I64)((point[1]/reproject_quantizer->y_scale_factor)/10000000))*10000000*reproject_quantizer->y_scale_factor;
         reproject_quantizer->z_offset = ((I64)((point[2]/reproject_quantizer->z_scale_factor)/10000000))*10000000*reproject_quantizer->z_scale_factor;
-      }
 
+        set_projection_in_header = true;
+      }
+    }
+    else if (geoprojectionconverter.has_projection(true)) // set because only a source projection was provided in the command line
+    {
+      set_projection_in_header = true;
+    }
+
+    if (set_projection_in_header)
+    {
       int number_of_keys;
       GeoProjectionGeoKeys* geo_keys = 0;
       int num_geo_double_params;
@@ -840,6 +978,7 @@ int main(int argc, char *argv[])
           lasreader->header.del_geo_double_params();
         }
         lasreader->header.del_geo_ascii_params();
+        lasreader->header.del_geo_ogc_wkt();
       }
 
       if (set_ogc_wkt) // maybe also set the OCG WKT 
@@ -848,7 +987,7 @@ int main(int argc, char *argv[])
         I32 len = (ogc_wkt ? strlen(ogc_wkt) : 0);
         if (ogc_wkt == 0)
         { 
-          if (!geoprojectionconverter.get_ogc_wkt_from_projection(len, &ogc_wkt, !geoprojectionconverter.has_projection(false)))
+          if (!geoprojectionconverter.get_ogc_wkt_from_projection(len, &ogc_wkt, false))
           {
             fprintf(stderr, "WARNING: cannot produce OCG WKT. ignoring '-set_ogc_wkt' for '%s'\n", lasreadopener.get_file_name());
             if (ogc_wkt) free(ogc_wkt);
@@ -956,6 +1095,26 @@ int main(int argc, char *argv[])
         for (i = remove_variable_length_record_to; i >= remove_variable_length_record_from; i--)
         {
           lasreader->header.remove_vlr(i);
+        }
+      }
+    }
+
+    if (remove_all_extended_variable_length_records)
+    {
+      lasreader->header.clean_evlrs();
+    }
+    else
+    {
+      if (remove_extended_variable_length_record != -1)
+      {
+        lasreader->header.remove_evlr(remove_extended_variable_length_record);
+      }
+    
+      if (remove_extended_variable_length_record_from != -1)
+      {
+        for (i = remove_extended_variable_length_record_to; i >= remove_extended_variable_length_record_from; i--)
+        {
+          lasreader->header.remove_evlr(i);
         }
       }
     }
@@ -1182,6 +1341,12 @@ int main(int argc, char *argv[])
     }
 
     laswriter->close();
+    // delete empty output files
+    if (remove_empty_files && (laswriter->npoints == 0) && laswriteopener.get_file_name())
+    {        
+      remove(laswriteopener.get_file_name());
+      if (verbose) fprintf(stderr,"removing empty output file '%s'\n", laswriteopener.get_file_name());
+    }
     delete laswriter;
 
     lasreader->close();

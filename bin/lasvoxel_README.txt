@@ -1,107 +1,62 @@
 ****************************************************************
 
-  lasclip:
+  lasvoxel:
 
-  takes as input a LAS/LAZ/TXT file and a SHP/TXT file with one
-  or many polygons (e.g. building footprints), clips away all the
-  points that fall outside all polygons (or inside some polygons),
-  and stores the surviving points to the output LAS/LAZ/TXT file.
+  This tool computes a voxelization of points. You can specify the
+  xy and the z size of the voxel cells separately with '-step_xy 2'
+  and '-step_z 0.3' which would create cells of size 2 by 2 by 0.3
+  units or use uniform sized cells of '-step 0.5'.
 
-  Instead of clipping the points they can also be reclassified with
-  the '-classify 6' option or flagged with '-flag_as_withheld'.
+  This is just a prototype for the moment.
 
-  The input SHP/TXT file *must* contain clean polygons or polylines
-  that are free of self-intersections, duplicate points, and/or
-  overlaps and they must all form closed loops (e.g. last point
-  and first point are identical).
-
-  Sometimes polygons describe donut-shaped objects such as lakes
-  with an island. Here the winding order of the lake with be CW
-  and that of the island will be CCW. In order to correcly clip
-  or classify only the lake (but now the island) the command line
-  option '-donuts' needs to be added.
-
-  There is an option called '-split' that splits the input LiDAR
-  (be it one LAS/LAZ file or several on-the-fly '-merged' LAS/LAZ
-  files) into one output file per polygon. 
-
-  You can exclude certain point classes from the clipping or the
-  reclassifying with option '-ignore_class 2' or '-ignore_class
-  3 4 5 6' and they will all be written back to the clipped or
-  the reclassified file. Then the clipping or the reclassifying
-  will be applied exclusively to the other points.
-
-  You can also ignore points based on their return counts with
-  '-ignore_first_of_many', '-ignore_intermediate', '-ignore_last',
-  '-ignore_last_of_many', '-ignore_first', '-ignore_single'.
-
-  There is an example SHP file called "TO_city_hall.shp" that
-  can be used together with the TO_core_last_zoom.las or the
-  TO_core_last.las data set to clip away the Toronto city hall.
-
-  Please license from martin.isenburg@rapidlasso.com to use lasclip
-  commercially.
+  Please license from martin@rapidlasso.com before using lasvoxel
+  commercially. Please note that the unlicensed version will set
+  intensity, gps_time, user data, and point source ID to zero,
+  slightly change the LAS point order, and randomly add a tiny
+  bit of white noise to the points coordinates once a certain
+  number of points in the input file is exceeded.
 
   For updates check the website or join the LAStools mailing list.
 
+  http://rapidlasso.com/
   http://lastools.org/
   http://groups.google.com/group/lastools/
   http://twitter.com/lastools/
   http://facebook.com/lastools/
   http://linkedin.com/groups?gid=4408378
 
-  Martin @lastools
+  Martin @rapidlasso
 
 ****************************************************************
 
 example usage:
 
->> lasclip -i *.las -poly polygon.shp -v
+>> lasvoxel -v ^
+            -i ..\data\france.laz ^
+            -i ..\data\fusa.laz ^
+            -step 1 ^
+            -odix _mist -olaz
 
-clips all the LAS files matching "*.las" against the polygon(s) in 
-"polygon.shp" and stores each result to a LAS file called "*_1.las".
+voxelizing 101206 points with step_xy 1 units and step_z 1 units ...
+took 0.063 sec. created 15 vertical layers. outputting ...
+done with '..\data\france_mist.laz'. took 0.078 sec.
+voxelizing 277573 points with step_xy 1 m and step_z 1 m ...
+took 0.186 sec. created 23 vertical layers. outputting ...
+done with '..\data\fusa_mist.laz'. took 0.241 sec.
+done with all files. total time for 2 files 0.319 sec.
 
->> lasclip -i *.txt -iparse xyzt -poly polygon.shp -otxt -oparse xyzt
 
-same but for ASCII input/output that gets parsed with "xyzt".
+>> lastile -i shitloadoflidar.laz ^
+           -tile_size 10 ^
+           -odir tiles -o small.laz
 
->> lasclip -i TO_core_last_zoom.laz -poly TO_city_hall.shp -o output.laz -interior -v
+>> lasvoxel -i tiles/small*.laz ^
+            -odir result -olaz
 
-clips the points falling *inside* the polygon that describes the building
-footprint of the toronto city hall from the file TO_core_last_zoom.laz
-and stores the result to output.laz.
+>> lasmerge -i result/small*.laz ^
+            -o big_result.laz
 
->> lasclip -i TO_core_last_zoom.laz -poly TO_city_hall.shp -o output.laz -v
-
-same as above but now it clips points falling *outside* of the polygon.
-
->> lasclip -i TO_core_last_zoom.laz -poly TO_city_hall.shp -o output.laz -classify 6 -interior -v
-
-classifies the points falling *inside* the polygon as "Building".
-
->> lasclip -i TO_core_last_zoom.laz -poly TO_city_hall.shp -o output.laz -flag_as_withheld -interior
-
-flags the points falling *inside* the polygon as 'withheld'.
-
->> lasclip -i city.las -poly buildings.txt -interior -o city_without_buildings.las
-
-clips the points from the inside of the buildings footprints specified
-in 'buildings.txt' out of the LAS file 'city.las' and stores the other
-points to 'city_without_buildings.las'. The text file should have the
-following format:
-
-757600 3.6927e+006
-757432 3.69264e+006
-757400 3.69271e+006
-757541 3.69272e+006
-757600 3.6927e+006
-#
-757800 3.6917e+006
-757632 3.69164e+006
-757600 3.69171e+006
-757741 3.69172e+006
-757800 3.6917e+006
-[...]
+the above workflow is for larger areas and/or tiny voxels sizes
 
 ****************************************************************
 
@@ -110,16 +65,14 @@ overview of all tool-specific switches:
 -v                                   : more info reported in console
 -vv                                  : even more info reported in console
 -quiet                               : nothing reported in console
--wait                                : wait for <ENTER> in the console at end of process
 -version                             : reports this tool's version number
 -fail                                : fail if license expired or invalid
 -gui                                 : start with files loaded into GUI
 -cores 4                             : process multiple inputs on 4 cores in parallel
--ignore_class 0 1 3 5 6 7 9          : ignores points with specified classification codes
-
-... more to come ...
-
--dont_remove_empty_files             : do not remove files that have zero points remaining from disk
+-ignore_class 1 3 4 5 6 7 9          : ignores points with specified classification codes
+-step 1.0                            : use 1 x 1 x 1 uniform grid for finding isolated points
+-step_xy 2.0                         : set the horizontal x and y spacing of the grid to 2
+-step_z 0.5                          : set the vertical z spacing of the grid to 0.5
 -ilay                                : apply all LASlayers found in corresponding *.lay file on read
 -ilay 3                              : apply first three LASlayers found in corresponding *.lay file on read
 -ilaydir E:\my_layers                : look for corresponding *.lay file in directory E:\my_layers
@@ -128,10 +81,9 @@ overview of all tool-specific switches:
 
 ****************************************************************
 
-
 for more info:
 
-D:\LAStools\bin>lasclip -h
+E:\LAStools\bin>lasvoxel -h
 Filter points based on their coordinates.
   -keep_tile 631000 4834000 1000 (ll_x ll_y size)
   -keep_circle 630250.00 4834750.00 100 (x y radius)
@@ -151,9 +103,11 @@ Filter points based on their coordinates.
   -drop_z_above 130.725 (max_z)
   -keep_xyz 620000 4830000 100 621000 4831000 200 (min_x min_y min_z max_x max_y max_z)
   -drop_xyz 620000 4830000 100 621000 4831000 200 (min_x min_y min_z max_x max_y max_z)
-Filter points based on their return number.
-  -first_only -keep_first -drop_first
-  -last_only -keep_last -drop_last
+Filter points based on their return numbering.
+  -keep_first -first_only -drop_first
+  -keep_last -last_only -drop_last
+  -keep_second_last -drop_second_last
+  -keep_first_of_many -keep_last_of_many
   -drop_first_of_many -drop_last_of_many
   -keep_middle -drop_middle
   -keep_return 1 2 3
@@ -162,19 +116,22 @@ Filter points based on their return number.
   -keep_double -drop_double
   -keep_triple -drop_triple
   -keep_quadruple -drop_quadruple
-  -keep_quintuple -drop_quintuple
+  -keep_number_of_returns 5
+  -drop_number_of_returns 0
 Filter points based on the scanline flags.
   -drop_scan_direction 0
-  -scan_direction_change_only
-  -edge_of_flight_line_only
+  -keep_scan_direction_change
+  -keep_edge_of_flight_line
 Filter points based on their intensity.
   -keep_intensity 20 380
   -drop_intensity_below 20
   -drop_intensity_above 380
   -drop_intensity_between 4000 5000
-Filter points based on their classification.
+Filter points based on classifications or flags.
   -keep_class 1 3 7
   -drop_class 4 2
+  -keep_extended_class 43
+  -drop_extended_class 129 135
   -drop_synthetic -keep_synthetic
   -drop_keypoint -keep_keypoint
   -drop_withheld -keep_withheld
@@ -182,6 +139,8 @@ Filter points based on their classification.
 Filter points based on their user data.
   -keep_user_data 1
   -drop_user_data 255
+  -keep_user_data_below 50
+  -keep_user_data_above 150
   -keep_user_data_between 10 20
   -drop_user_data_below 1
   -drop_user_data_above 100
@@ -196,6 +155,7 @@ Filter points based on their point source ID.
 Filter points based on their scan angle.
   -keep_scan_angle -15 15
   -drop_abs_scan_angle_above 15
+  -drop_abs_scan_angle_below 1
   -drop_scan_angle_below -15
   -drop_scan_angle_above 15
   -drop_scan_angle_between -25 -23
@@ -204,33 +164,56 @@ Filter points based on their gps time.
   -drop_gps_time_below 11.125
   -drop_gps_time_above 130.725
   -drop_gps_time_between 22.0 48.0
+Filter points based on their RGB/CIR/NIR channels.
+  -keep_RGB_red 1 1
+  -keep_RGB_green 30 100
+  -keep_RGB_blue 0 0
+  -keep_RGB_nir 64 127
+  -keep_NDVI 0.2 0.7 -keep_NDVI_from_CIR -0.1 0.5
+  -keep_NDVI_intensity_is_NIR 0.4 0.8 -keep_NDVI_green_is_NIR -0.2 0.2
 Filter points based on their wavepacket.
   -keep_wavepacket 0
   -drop_wavepacket 3
+Filter points based on extra attributes.
+  -keep_attribute_above 0 5.0
+  -drop_attribute_below 1 1.5
 Filter points with simple thinning.
-  -keep_every_nth 2
+  -keep_every_nth 2 -drop_every_nth 3
   -keep_random_fraction 0.1
+  -keep_random_fraction 0.1 4711
   -thin_with_grid 1.0
-  -thin_with_time 0.001
+  -thin_pulses_with_time 0.0001
+  -thin_points_with_time 0.000001
+Boolean combination of filters.
+  -filter_and
 Transform coordinates.
   -translate_x -2.5
   -scale_z 0.3048
   -rotate_xy 15.0 620000 4100000 (angle + origin)
   -translate_xyz 0.5 0.5 0
   -translate_then_scale_y -0.5 1.001
+  -transform_helmert -199.87,74.79,246.62
+  -transform_helmert 598.1,73.7,418.2,0.202,0.045,-2.455,6.7
   -switch_x_y -switch_x_z -switch_y_z
   -clamp_z_below 70.5
   -clamp_z 70.5 72.5
+  -copy_attribute_into_z 0
+  -copy_intensity_into_z
 Transform raw xyz integers.
   -translate_raw_z 20
   -translate_raw_xyz 1 1 0
+  -translate_raw_xy_at_random 2 2
   -clamp_raw_z 500 800
 Transform intensity.
+  -set_intensity 0
   -scale_intensity 2.5
   -translate_intensity 50
   -translate_then_scale_intensity 0.5 3.1
   -clamp_intensity 0 255
   -clamp_intensity_above 255
+  -copy_RGB_into_intensity
+  -copy_NIR_into_intensity
+  -copy_attribute_into_intensity 0
 Transform scan_angle.
   -scale_scan_angle 1.944445
   -translate_scan_angle -5
@@ -238,41 +221,62 @@ Transform scan_angle.
 Change the return number or return count of points.
   -repair_zero_returns
   -set_return_number 1
+  -set_extended_return_number 10
   -change_return_number_from_to 2 1
   -set_number_of_returns 2
+  -set_number_of_returns 15
   -change_number_of_returns_from_to 0 2
 Modify the classification.
   -set_classification 2
+  -set_extended_classification 0
   -change_classification_from_to 2 4
   -classify_z_below_as -5.0 7
   -classify_z_above_as 70.0 7
   -classify_z_between_as 2.0 5.0 4
   -classify_intensity_above_as 200 9
   -classify_intensity_below_as 30 11
+  -classify_intensity_between_as 500 900 15
   -change_extended_classification_from_to 6 46
+  -move_ancient_to_extended_classification
 Change the flags.
   -set_withheld_flag 0
   -set_synthetic_flag 1
   -set_keypoint_flag 0
-  -set_extended_overlap_flag 1
+  -set_overlap_flag 1
 Modify the extended scanner channel.
-  -set_extended_scanner_channel 2
+  -set_scanner_channel 2
+  -copy_user_data_into_scanner_channel
 Modify the user data.
   -set_user_data 0
+  -scale_user_data 1.5
   -change_user_data_from_to 23 26
+  -change_user_data_from_to 23 26
+  -copy_attribute_into_user_data 1
 Modify the point source ID.
   -set_point_source 500
   -change_point_source_from_to 1023 1024
   -copy_user_data_into_point_source
+  -copy_scanner_channel_into_point_source
+  -merge_scanner_channel_into_point_source
+  -split_scanner_channel_from_point_source
   -bin_Z_into_point_source 200
   -bin_abs_scan_angle_into_point_source 2
 Transform gps_time.
+  -set_gps_time 113556962.005715
   -translate_gps_time 40.50
   -adjusted_to_week
   -week_to_adjusted 1671
-Transform RGB colors.
-  -scale_rgb_down (by 256)
-  -scale_rgb_up (by 256)
+Transform RGB/NIR colors.
+  -set_RGB 255 0 127
+  -set_RGB_of_class 9 0 0 255
+  -scale_RGB 2 4 2
+  -scale_RGB_down (by 256)
+  -scale_RGB_up (by 256)
+  -switch_R_G -switch_R_B -switch_B_G
+  -copy_R_into_NIR -copy_R_into_intensity
+  -copy_G_into_NIR -copy_G_into_intensity
+  -copy_B_into_NIR -copy_B_into_intensity
+  -copy_intensity_into_NIR
 Supported LAS Inputs
   -i lidar.las
   -i lidar.laz
@@ -306,17 +310,15 @@ Supported LAS Outputs
   -olas -olaz -otxt -obin -oqfit (specify format)
   -stdout (pipe to stdout)
   -nil    (pipe to NULL)
-LAStools (by martin@rapidlasso.com) version 150526 (commercial)
+LAStools (by martin@rapidlasso.com) version 180322 (commercial)
 usage:
-lasclip -i *.las -poly polygon.shp -v
-lasclip -i *.txt -iparse xyzt -poly polygon.shp -otxt -oparse xyzt
-lasclip -i lidar.las -poly footprint.shp -o lidar_clipped.laz -v
-lasclip -i lidar.laz -poly buildings.shp -o lidar_clipped.laz -interior
-lasclip -i lidar.laz -poly swath.shp -o lidar_overlap.laz -classify_as 12
-lasclip -i lidar.laz -poly hydro.shp -o clean.laz -ignore_class 2
-lasclip -i lidar.laz -poly noise.shp -o lidar_clean.laz -interior -flag_as_withheld
-lasclip -i forest\*.laz -merged -poly plots.shp -split -o plots.laz
+lasvoxel -i in.laz -o out.laz
+lasvoxel -i in.laz -step 2 -o out.laz
+lasvoxel -i in.laz -step_xy 2 -step_z 1 -o out.laz
+lasvoxel -i in.laz -step_xy 4 -step_z 2 -max_count 65535 -o out.laz
+lasvoxel -i in.laz -step 2.5 -compute_IDs_and_voxel_table -o out.laz
+lasvoxel -i in.laz -step 2.5 -compute_IDs_and_voxel_table -store_IDs_in_intensity -o out.laz
+lasvoxel -h
 
----------------
-
-if you find bugs let me (martin.isenburg@rapidlasso.com) know.
+-------------
+if you find bugs let me (martin@rapidlasso.com) know.

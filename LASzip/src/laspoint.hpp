@@ -25,6 +25,7 @@
   
   CHANGE HISTORY:
   
+    15 June 2018 -- fix in flag copy from legacy (0-5) to extended (6-10) type
     10 March 2017 -- fix in copy_to() and copy_from() new LAS 1.4 point types
     10 October 2016 -- small fixes for NIR and extended scanner channel
     19 July 2015 -- created after FOSS4GE in the train back from Lake Como
@@ -92,11 +93,14 @@ public:
   U8 extended_return_number : 4;
   U8 extended_number_of_returns : 4;
 
-  // for 8 byte alignment of the GPS time
-  U8 dummy[3];
+  // LASlib internal use only
+  U8 deleted_flag;
 
-  // LASlib only
-  U32 deleted_flag;
+  // for 8 byte alignment of the GPS time
+  U8 dummy[2];
+
+  // compressed LASzip 1.4 points only
+  BOOL gps_time_change;
 
   F64 gps_time;
   U16 rgb[4];
@@ -190,8 +194,8 @@ public:
     }
     else if (extended_point_type)
     {
-      extended_classification = other.classification & 31;
-      extended_classification_flags = other.classification >> 5;
+      extended_classification = other.classification;
+      extended_classification_flags = ((other.withheld_flag) << 2) | ((other.keypoint_flag) << 1) | (other.synthetic_flag);
       extended_number_of_returns = other.number_of_returns;
       extended_return_number = other.return_number;
       extended_scan_angle = I16_QUANTIZE(((F32)other.scan_angle_rank)/0.006);
@@ -554,7 +558,7 @@ public:
   inline I8 get_scan_angle_rank() const { return scan_angle_rank; };
   inline U8 get_user_data() const { return user_data; };
   inline U16 get_point_source_ID() const { return point_source_ID; };
-  inline U32 get_deleted_flag() const { return deleted_flag; };
+  inline U8 get_deleted_flag() const { return deleted_flag; };
   inline F64 get_gps_time() const { return gps_time; };
   inline const U16* get_rgb() const { return rgb; };
   inline U16 get_R() const { return rgb[0]; };
@@ -578,7 +582,7 @@ public:
   inline void set_scan_angle_rank(I8 scan_angle_rank) { this->scan_angle_rank = scan_angle_rank; };
   inline void set_user_data(U8 user_data) { this->user_data = user_data; };
   inline void set_point_source_ID(U16 point_source_ID) { this->point_source_ID = point_source_ID; };
-  inline void set_deleted_flag(U8 deleted_flag) { this->deleted_flag = (U32)deleted_flag; };
+  inline void set_deleted_flag(U8 deleted_flag) { this->deleted_flag = deleted_flag; };
   inline void set_gps_time(const F64 gps_time) { this->gps_time = gps_time; };
   inline void set_RGB(const U16* rgb) { memcpy(this->rgb, rgb, sizeof(U16) * 3); };
   inline void set_RGBI(const U16* rgb) { memcpy(this->rgb, rgb, sizeof(U16) * 4); };
@@ -612,6 +616,8 @@ public:
 
   inline F32 get_scan_angle() const { if (extended_point_type) return 0.006f*extended_scan_angle; else return (F32)scan_angle_rank; };
   inline F32 get_abs_scan_angle() const { if (extended_point_type) return (extended_scan_angle < 0 ? -0.006f*extended_scan_angle : 0.006f*extended_scan_angle) ; else return (scan_angle_rank < 0 ? (F32)-scan_angle_rank : (F32)scan_angle_rank); };
+
+  inline void set_scan_angle(F32 scan_angle) { if (extended_point_type) set_extended_scan_angle(I16_QUANTIZE(scan_angle/0.006f)); else set_scan_angle_rank(I8_QUANTIZE(scan_angle)); };
 
   inline void compute_coordinates()
   {
