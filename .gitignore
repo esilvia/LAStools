@@ -25,3 +25,4 @@ Release64
 *.cachefile 
 *.VC.db 
 *.VC.VC.opendb 
+.vs
