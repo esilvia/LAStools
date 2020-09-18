@@ -893,10 +893,14 @@ inline void LASreadItemCompressed_POINT14_v4::read(U8* item, U32& context)
     }
     ((LASpoint14*)last_item)->classification = dec_classification->decodeSymbol(contexts[current_context].m_classification[ccc]);
 
-    // legacy copies
+    // update the legacy copy
     if (((LASpoint14*)last_item)->classification < 32)
     {
       ((LASpoint14*)last_item)->legacy_classification = ((LASpoint14*)last_item)->classification;
+    }
+    else
+    {
+      ((LASpoint14*)last_item)->legacy_classification = 0;
     }
   }
 
@@ -2129,7 +2133,14 @@ LASreadItemCompressed_BYTE14_v4::LASreadItemCompressed_BYTE14_v4(ArithmeticDecod
 
     changed_Bytes[i] = FALSE;
 
-    requested_Bytes[i] = (decompress_selective & (LASZIP_DECOMPRESS_SELECTIVE_BYTE0 << i) ? TRUE : FALSE);
+    if (i > 15) // currently only the first 16 extra bytes can be selectively decompressed
+    {
+      requested_Bytes[i] = TRUE;
+    }
+    else
+    {
+      requested_Bytes[i] = (decompress_selective & (LASZIP_DECOMPRESS_SELECTIVE_BYTE0 << i) ? TRUE : FALSE);
+    }
   }
 
   /* init the bytes buffer to zero */

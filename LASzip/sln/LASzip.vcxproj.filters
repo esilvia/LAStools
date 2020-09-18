@@ -197,9 +197,6 @@
     <ClCompile Include="..\src\laszip.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\laszip_dll.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\laszipper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -207,6 +204,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\src\laswriteitemcompressed_v4.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\mydefs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\demzip_dll.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

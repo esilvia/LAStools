@@ -52,9 +52,7 @@ typedef struct LASpoint14
   U8 scan_direction_flag : 1;
   U8 edge_of_flight_line : 1;
   U8 legacy_classification : 5;
-  U8 legacy_synthetic_flag : 1;
-  U8 legacy_keypoint_flag  : 1;
-  U8 legacy_withheld_flag  : 1;
+  U8 legacy_flags : 3;
   I8 legacy_scan_angle_rank;
   U8 user_data;
   U16 point_source_ID;
@@ -206,6 +204,8 @@ LASwriteItemCompressed_POINT14_v3::~LASwriteItemCompressed_POINT14_v3()
     delete outstream_point_source;
     delete outstream_gps_time;
   }
+
+//  fprintf(stderr, "%u %u %u %u %u %u %u %u %u\n", num_bytes_channel_returns_XY, num_bytes_Z, num_bytes_classification, num_bytes_flags, num_bytes_intensity, num_bytes_scan_angle, num_bytes_user_data, num_bytes_point_source, num_bytes_gps_time);
 }
 
 inline BOOL LASwriteItemCompressed_POINT14_v3::createAndInitModelsAndCompressors(U32 context, const U8* item)
@@ -501,9 +501,9 @@ inline BOOL LASwriteItemCompressed_POINT14_v3::write(const U8* item, U32& contex
 
   // determine changed attributes
 
-  U32 point_source_change = (((LASpoint14*)item)->point_source_ID != ((LASpoint14*)last_item)->point_source_ID);
-  U32 gps_time_change = (((LASpoint14*)item)->gps_time != ((LASpoint14*)last_item)->gps_time);
-  U32 scan_angle_change = (((LASpoint14*)item)->scan_angle != ((LASpoint14*)last_item)->scan_angle);
+  BOOL point_source_change = (((LASpoint14*)item)->point_source_ID != ((LASpoint14*)last_item)->point_source_ID);
+  BOOL gps_time_change = (((LASpoint14*)item)->gps_time != ((LASpoint14*)last_item)->gps_time);
+  BOOL scan_angle_change = (((LASpoint14*)item)->scan_angle != ((LASpoint14*)last_item)->scan_angle);
 
   // get last and current return counts
 

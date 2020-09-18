@@ -67,6 +67,7 @@
     <ClCompile Include="..\src\arithmeticdecoder.cpp" />
     <ClCompile Include="..\src\arithmeticencoder.cpp" />
     <ClCompile Include="..\src\arithmeticmodel.cpp" />
+    <ClCompile Include="..\src\demzip_dll.cpp" />
     <ClCompile Include="..\src\integercompressor.cpp" />
     <ClCompile Include="..\src\lasindex.cpp" />
     <ClCompile Include="..\src\lasinterval.cpp" />
@@ -84,7 +85,7 @@
     <ClCompile Include="..\src\laswritepoint.cpp" />
     <ClCompile Include="..\src\laszip.cpp" />
     <ClCompile Include="..\src\laszipper.cpp" />
-    <ClCompile Include="..\src\laszip_dll.cpp" />
+    <ClCompile Include="..\src\mydefs.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <SccProjectName />
@@ -146,6 +147,7 @@
     <OutDir>.\Debug64\</OutDir>
     <IntDir>.\Debug64\</IntDir>
     <LinkIncremental>true</LinkIncremental>
+    <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>.\Release\</OutDir>
@@ -156,6 +158,7 @@
     <OutDir>.\Release64\</OutDir>
     <IntDir>.\Release64\</IntDir>
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>$(ProjectName)64</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -225,10 +228,10 @@ copy Debug\LASzip.dll ..\example\Debug\LASzip.dll</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <PostBuildEvent>
-      <Command>copy Debug64\LASzip.dll ..\dll64D\LASzip.dll
-copy Debug64\LASzip.pdb ..\dll64D\LASzip.pdb
+      <Command>copy Debug64\$(TargetName).dll ..\dll64D\$(TargetName).dll
+copy Debug64\$(TargetName).pdb ..\dll64D\$(TargetName).pdb
 copy Debug64\vc141.pdb ..\dll64D\vc141.pdb
-copy Debug64\LASzip.dll ..\example\Debug64\LASzip.dll</Command>
+copy Debug64\$(TargetName).dll ..\example\Debug64\$(TargetName).dll</Command>
     </PostBuildEvent>
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -249,7 +252,7 @@ copy Debug64\LASzip.dll ..\example\Debug64\LASzip.dll</Command>
       <LinkDLL>true</LinkDLL>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <OutputFile>.\Debug64\LASzip.dll</OutputFile>
+      <OutputFile>.\Debug64\LASzip64.dll</OutputFile>
       <ImportLibrary>.\Debug64\LASzip.lib</ImportLibrary>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -317,9 +320,9 @@ copy Release\LASzip.dll ..\example\Release\LASzip.dll</Command>
       <DisableSpecificWarnings>4800;4996;4267;4244;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <PostBuildEvent>
-      <Command>copy Release64\LASzip.dll ..\dll64\LASzip.dll
-copy Release64\vc120.pdb ..\dll64\vc120.pdb
-copy Release64\LASzip.dll ..\example\Release64\LASzip.dll</Command>
+      <Command>copy Release64\$(TargetName).dll ..\dll64\$(TargetName).dll
+copy Release64\vc141.pdb ..\dll64\vc141.pdb
+copy Release64\$(TargetName).dll ..\example\Release64\$(TargetName).dll</Command>
     </PostBuildEvent>
     <Midl>
       <SuppressStartupBanner>true</SuppressStartupBanner>
@@ -339,7 +342,7 @@ copy Release64\LASzip.dll ..\example\Release64\LASzip.dll</Command>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <LinkDLL>true</LinkDLL>
       <SubSystem>Console</SubSystem>
-      <OutputFile>.\Release64\LASzip.dll</OutputFile>
+      <OutputFile>.\Release64\LASzip64.dll</OutputFile>
       <ImportLibrary>.\Release\LASzip.lib</ImportLibrary>
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
